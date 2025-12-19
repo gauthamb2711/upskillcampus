@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Expense Tracker — Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+  /* Redesign for Smart Expense Tracker Pro 
+    Design Style: Professional, Clean, Minimal, Light-first feel (adapted for existing dark mode structure) 
+  */
+  :root{ 
+    /* Professional Dark Theme (Default) */
+    --bg:#0f172a; /* Deep professional dark blue */
+    --card: #1e293b; /* Slightly lighter card background */
+    --muted:#94a3b8; /* Soft blue-gray for muted text */
+    --accent:#3b82f6; /* Corporate Blue */
+    --accent-2:#8b5cf6; /* Corporate Purple */
+    --glass: rgba(255,255,255,0.05); /* Very subtle glass effect */
+    --good:#10b981; --warn:#f59e0b; --danger:#ef4444; 
+    --shadow-card: 0 4px 12px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.05); /* Soft professional shadow for dark mode */
+    --border-subtle: 1px solid rgba(255,255,255,0.08);
+
+    /* Light Theme properties for JS override */
+    --text-primary: #1f2937;
+    --text-muted-light: #6b7280;
+    --card-light: #ffffff;
+    --border-light: #e5e7eb; 
+  }
+  
+  /* Shared styles */
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  
+  /* Initial body/base styles (Default Dark Theme) */
+  body{
+    font-family:Inter,system-ui,Arial;
+    background:var(--bg); /* Use base color instead of complex gradient for cleaner look */
+    color:#e5e7eb; /* Light text for dark background */
+    margin:0;padding:24px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  /* Light Theme Override (When JS applies inline styles) 
+     The JS `applyTheme` sets body background and color, so we use selectors based on that.
+  */
+  body[style*="#f8fafc"] { /* A bit hacky, but respects NO JS CHANGE rule */
+    color: var(--text-primary) !important;
+  }
+  
+  body[style*="#f8fafc"] .card { /* Override card for light theme */
+    background: var(--card-light) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04) !important;
+    border: 1px solid var(--border-light) !important;
+  }
+  
+  body[style*="#f8fafc"] .muted {
+    color: var(--text-muted-light) !important;
+  }
+  
+  body[style*="#f8fafc"] input, body[style*="#f8fafc"] select {
+    background: var(--card-light) !important;
+    border-color: var(--border-light) !important;
+  }
+  
+  body[style*="#f8fafc"] .btn.ghost:hover {
+    background: rgba(0,0,0,0.05) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  body[style*="#f8fafc"] .expense-item {
+    background: var(--card-light) !important;
+    border: 1px solid var(--border-light) !important;
+  }
+  
+  body[style*="#f8fafc"] .expense-item:hover {
+    background: #f7f7f7 !important;
+  }
+  
+  /* Component Styling */
+  
+  .app{max-width:1200px;margin:0 auto;position:relative}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  h1{font-weight:800;margin:0;font-size:24px; /* Slightly larger heading */}
+  .sub{color:var(--muted);font-size:14px; /* Slightly larger sub text */}
+  .top-controls{display:flex;gap:10px;align-items:center}
+  
+  /* Buttons */
+  .btn{
+    background:var(--accent);
+    color:white; /* Use white text for dark accent */
+    border:none;
+    padding:12px 18px; /* More padding */
+    border-radius:12px; /* Smooth corners */
+    cursor:pointer;
+    font-weight:600;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3); /* Subtle accent shadow */
+  }
+  .btn:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    opacity: 0.95;
+  }
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--border-subtle);
+    color:var(--muted);
+    box-shadow:none;
+    padding:10px 16px;
+  }
+  .btn.ghost:hover{
+    background:var(--glass);
+    transform: none;
+    box-shadow:none;
+    color:#e5e7eb;
+  }
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px; /* Increased spacing */}
+  
+  /* Cards */
+  .card{
+    background:var(--card);
+    padding:20px; /* Increased padding */
+    border-radius:16px; /* Rounded corners (10-16px) */
+    box-shadow:var(--shadow-card); /* Soft shadow */
+    border:var(--border-subtle);
+    transition: background 0.3s, border 0.3s, box-shadow 0.3s;
+  }
+  .small{padding:16px}
+  .big-num{font-weight:800;font-size:28px; /* Larger numbers */}
+  .muted{color:var(--muted)}
+  
+  main{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-top:24px; /* Increased spacing */}
+  canvas{background:var(--card); border-radius:12px;padding:12px} /* Chart containers */
+  
+  /* List */
+  .list{display:flex;flex-direction:column;gap:12px;max-height:450px;overflow:auto;padding-right:8px}
+  .expense-item{
+    display:flex;justify-content:space-between;gap:16px;
+    padding:16px;
+    background:var(--card); /* Use card color for list item */
+    border-radius:12px;
+    align-items:center;
+    border:1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s, border-color 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .expense-item:hover{
+    background:rgba(255,255,255,0.08);
+  }
+  .chip{
+    padding:6px 12px;
+    border-radius:999px; /* Pill shape */
+    font-weight:600;
+    font-size:12px;
+    background:var(--accent-2);
+    color:white;
+  }
+  
+  .aside{display:flex;flex-direction:column;gap:16px}
+
+  /* Inputs and Selects (Clean borders, soft focus) */
+  input, select {
+      padding:10px;
+      border-radius:10px;
+      border:1px solid var(--border-subtle);
+      background:var(--card);
+      color:inherit;
+      width:100%;
+      transition: border-color 0.2s, background-color 0.2s;
+      outline:none;
+      font-size:15px;
+  }
+  input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  /* Heatmap */
+  .heatmap{display:flex;flex-wrap:wrap;gap:4px} /* Tighter spacing for heatmap */
+  .heat-day{
+    width:32px;height:32px; /* Slightly larger days */
+    border-radius:8px;
+    display:grid;place-items:center;
+    font-size:12px;
+    color:rgba(255,255,255,0.9);
+    transition: background 0.3s;
+  }
+  
+  /* Modal */
+  .backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.7);backdrop-filter: blur(4px); display:none;align-items:center;justify-content:center;padding:20px;z-index:1200}
+  .modal{max-width:560px;width:100%}
+  .modal .card{padding:24px;border-radius:16px;}
+  
+  /* Blur-lock overlay */
+  #blurLock{position:fixed;inset:0;display:none;z-index:2000;align-items:center;justify-content:center;background:rgba(2,6,23,0.7);backdrop-filter: blur(8px);color:#fff;font-size:24px}
+  #blurLock .msg{background:rgba(0,0,0,0.5);padding:20px 30px;border-radius:16px}
+  .blur-content { filter: blur(6px); transition: filter 0.3s ease-out; } /* Slightly stronger blur */
+  
+  /* Dependency Tree & Summary Popup styling */
+  .tree-view{font-size:14px;padding:0 12px}
+  .tree-view ul{list-style:none;padding-left:18px;border-left:1px solid var(--muted); opacity:0.8;}
+  .tree-view li{padding:6px 0}
+  .tree-view li > strong{color:var(--accent); font-weight:700;}
+  #summary-popup .card{max-width:340px;text-align:center} /* Wider popup */
+  #summary-popup .big-stat{font-size:36px;font-weight:800;color:var(--good);margin-bottom:12px}
+
+  /* Footer */
+  footer{margin-top:24px;padding-top:16px;border-top:1px solid var(--border-subtle); }
+
+  /* Media Queries (Adjusted for new spacing) */
+  @media(max-width:1000px){.grid{grid-template-columns:1fr 1fr 1fr}main{grid-template-columns:1fr} .card.charts{padding:16px} } 
+  @media(max-width:720px){.grid{grid-template-columns:1fr}main{grid-template-columns:1fr}.top-controls{flex-wrap:wrap}.card{padding:16px}}
+</style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <header>
+      <div>
+        <h1>Smart Expense Tracker — Pro</h1>
+        <div class="sub" id="greeting-text">Ultra UI • Offline-first • PDF summary & privacy lock</div>
+      </div>
+
+      <div class="top-controls">
+        <button class="btn ghost" id="toggle-theme">Dark / Light</button>
+        <button class="btn ghost" id="lock-screen-btn">🔒 Lock</button>
+        <button class="btn ghost" id="open-summary-popup">⚡ Quick Stats</button>
+        <button class="btn" id="open-add">+ Add</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="card small">
+        <div class="muted">Monthly Budget</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <div>
+            <div class="big-num" id="budget-left">₹0</div>
+            <div class="muted">Remaining this month</div>
+          </div>
+          <div style="text-align:right">
+            <div class="muted">Set budget</div>
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <input id="budget-input" placeholder="Amount" style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);width:120px">
+              <button class="btn ghost" id="save-budget">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card small">
+        <div class="muted">This Month • Totals</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <div>
+            <div class="big-num" id="total-month">₹0</div>
+            <div class="muted">Spent</div>
+          </div>
+          <div>
+            <div class="big-num" id="avg-daily">₹0</div>
+            <div class="muted">Avg / day</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card small">
+        <div class="muted">Predicted</div>
+        <div style="margin-top:8px">
+          <div class="big-num" id="predicted-month">₹0</div>
+          <div class="muted">Prediction for month</div>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <div>
+        <div class="card charts">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <strong>Insights</strong>
+              <div class="muted">Auto-generated tips & trends</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn ghost" id="export-pdf">Export PDF Summary</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:260px" class="card">
+              <canvas id="pieChart" height="220"></canvas>
+            </div>
+            <div style="flex:1;min-width:260px" class="card">
+              <canvas id="lineChart" height="220"></canvas>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="card" id="dependency-tree-card">
+            <strong>Spend Dependency Tree</strong>
+            <div class="muted" style="margin-bottom:8px">Visual breakdown of spending hierarchy</div>
+            <div id="dependency-tree" class="tree-view"></div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <strong>Top Insights</strong>
+            <div id="insights" class="muted" style="margin-top:8px"></div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <strong>Yearly Summary</strong>
+            <div class="muted" id="yearly-summary" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div><strong>Recent expenses</strong><div class="muted">Click to edit / delete</div></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="search" placeholder="Search" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit">
+              <select id="filter-category" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit">
+                <option value="">All categories</option>
+              </select>
+            </div>
+          </div>
+          <div class="list" id="expense-list"></div>
+        </div>
+      </div>
+
+      <aside class="aside">
+        <div class="card quick-add">
+          <strong>Quick Add</strong>
+          <div class="muted" style="margin-bottom:8px">Tap to add</div>
+          <input id="quick-amount" placeholder="Amount" />
+          <select id="quick-category">
+            <option>Food</option><option>Transport</option><option>Bills</option><option>Shopping</option><option>Rent</option><option>Other</option>
+          </select>
+          <select id="quick-mood" style="margin-top:8px">
+            <option value="Neutral">Mood: Neutral</option>
+            <option value="Happy">Mood: Happy 😊</option>
+            <option value="Stress">Mood: Stress 😫</option>
+            <option value="Sad">Mood: Sad 😞</option>
+            <option value="Impulse">Mood: Impulse 🛍️</option>
+          </select>
+          <input id="quick-note" placeholder="Note" />
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="quick-add">Add</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <strong>Spending Heatmap</strong>
+          <div class="muted">Daily spending intensity (last 30 days)</div>
+          <div style="margin-top:10px" id="heatmap" class="heatmap"></div>
+        </div>
+
+        <div class="card">
+          <strong>Security</strong>
+          <div class="muted">Set PIN to unlock (optional)</div>
+          <div style="display:flex;gap:8px;margin-top:8px"><input id="pin-input" placeholder="4-digit PIN" style="padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);width:120px"><button class="btn ghost" id="save-pin">Set PIN</button></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer style="margin-top:18px;display:flex;justify-content:space-between;align-items:center">
+      <div class="muted">Built with Vs code Smart expense tracker</div>
+      <div class="muted">Data stored locally • No servers</div>
+    </footer>
+  </div>
+
+  <div class="backdrop" id="modal-backdrop">
+    <div class="modal card" id="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong id="modal-title">Add Expense</strong>
+        <button class="btn ghost" id="close-modal">Close</button>
+      </div>
+      <div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="form-amount" placeholder="Amount" type="number" />
+          <select id="form-category">
+            <option>Food</option><option>Transport</option><option>Bills</option><option>Shopping</option><option>Rent</option><option>Other</option>
+          </select>
+        </div>
+        <div style="margin-bottom:8px">
+          <select id="form-mood" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit;width:100%;">
+            <option value="Neutral">Mood: Neutral</option>
+            <option value="Happy">Mood: Happy 😊</option>
+            <option value="Stress">Mood: Stress 😫</option>
+            <option value="Sad">Mood: Sad 😞</option>
+            <option value="Impulse">Mood: Impulse 🛍️</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="form-date" type="date" />
+          <input id="form-time" type="time" />
+        </div>
+        <input id="form-note" placeholder="Note" style="margin-bottom:8px" />
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" id="save-expense">Save</button>
+          <button class="btn ghost" id="delete-expense" style="display:none">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="backdrop" id="summary-backdrop">
+    <div class="modal card" id="summary-popup">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong>Quick Stats Summary</strong>
+        <button class="btn ghost" id="close-summary">Close</button>
+      </div>
+      <div id="quick-stats-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        </div>
+      <div style="margin-top:15px;text-align:left">
+        <strong>Top Categories:</strong> <span id="summary-categories" class="muted"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="backdrop" id="pin-backdrop">
+    <div class="modal card">
+      <div style="display:flex;justify-content:center;align-items:center;flex-direction:column">
+        <strong>Unlock App</strong>
+        <div class="muted" style="margin-top:8px">Enter your 4-digit PIN</div>
+        <input id="unlock-pin" placeholder="PIN" type="password" maxlength="4" style="margin-top:12px;padding:10px;border-radius:8px;width:140px;text-align:center" />
+        <div style="margin-top:12px;display:flex;gap:8px"><button class="btn" id="unlock-btn">Unlock</button><button class="btn ghost" id="close-pin">Close</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="blurLock"><div class="msg">🔒 Tap to unlock</div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // ------------------ Storage & State ------------------
+    const KEY = 'smart_expense_pro_v2';
+    const DEFAULT = { expenses: [], settings: { currency: 'INR', budget: 0, theme: 'dark', pinHash: null, name: 'User' }, meta: {} };
+    
+    // FIX 2: Global sum function for Dependency Tree and Insights
+    function sum(arr){ return arr.reduce((s,e)=>s+Number(e.amount),0); }
+
+    function load(){ 
+        try{ 
+            const stored = localStorage.getItem(KEY);
+            let data = stored ? JSON.parse(stored) : DEFAULT;
+            data.expenses = (data.expenses || []).map(e => ({...e, mood: e.mood || 'Neutral'}));
+            data.settings.name = data.settings.name || DEFAULT.settings.name;
+            return data;
+        }catch(e){
+            return JSON.parse(JSON.stringify(DEFAULT));
+        } 
+    }
+    function save(obj){ localStorage.setItem(KEY, JSON.stringify(obj)); }
+    let state = load();
+    state.expenses = state.expenses || []; state.settings = state.settings || DEFAULT.settings; state.meta = state.meta || DEFAULT.meta;
+    
+    if(state.settings.name === 'User') state.settings.name = 'Gautham'; 
+
+    // ------------------ Blur-Lock Initializer (FIX 1) ------------------
+    const appRoot = document.getElementById('appRoot');
+    const pinBackdrop = document.getElementById('pin-backdrop');
+    const blurLock = document.getElementById('blurLock');
+
+    // Immediate execution: If PIN is set, apply blur and show PIN modal
+    if (state.settings.pinHash) {
+        appRoot.classList.add('blur-content');
+        pinBackdrop.style.display = 'flex'; // Show PIN modal immediately as requested
+        blurLock.style.display = 'none';
+    }
+
+
+    // ------------------ Helpers ------------------
+    function uid(){ return 'e_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+    function iso(d){ return new Date(d).toISOString().slice(0,10); }
+    function fmt(amount){ try{ if(state.settings.currency==='INR') return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(amount); if(state.settings.currency==='USD') return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(amount); return amount;}catch(e){return amount;} }
+    function getHour(timestamp) { return new Date(timestamp).getHours(); }
+
+    // DOM refs
+    const refs = { totalMonth: document.getElementById('total-month'), budgetLeft: document.getElementById('budget-left'), avgDaily: document.getElementById('avg-daily'), predicted: document.getElementById('predicted-month'), expenseList: document.getElementById('expense-list'), pieCanvas: document.getElementById('pieChart'), lineCanvas: document.getElementById('lineChart'), insights: document.getElementById('insights'), yearly: document.getElementById('yearly-summary'), heatmap: document.getElementById('heatmap'), greetingText: document.getElementById('greeting-text'), treeContainer: document.getElementById('dependency-tree') };
+
+    // Charts
+    let pieChart=null, lineChart=null;
+    function initCharts(){
+      pieChart = new Chart(refs.pieCanvas.getContext('2d'), {type:'pie',data:{labels:[],datasets:[{data:[]} ]},options:{plugins:{legend:{position:'bottom'}}}});
+      lineChart = new Chart(refs.lineCanvas.getContext('2d'), {type:'line',data:{labels:[],datasets:[{label:'Daily Spend',data:[],tension:0.3,fill:true}]},options:{scales:{y:{beginAtZero:true}}}});
+    }
+
+    // Core CRUD
+    function addExpense({amount,category,date,time,note,mood}){ const dt = date ? new Date(date + (time?('T'+time):'')) : new Date(); const item = { id: uid(), amount: Number(amount), category, date: iso(dt), note: note||'', mood: mood||'Neutral', createdAt: dt.getTime() }; state.expenses.push(item); save(state); render(); }
+    function updateExpense(id, updates){ const idx = state.expenses.findIndex(e=>e.id===id); if(idx===-1) return; state.expenses[idx] = {...state.expenses[idx],...updates}; state.expenses[idx].mood = state.expenses[idx].mood || 'Neutral'; save(state); render(); }
+    function deleteExpense(id){ state.expenses = state.expenses.filter(e=>e.id!==id); save(state); render(); }
+
+    // Render
+    function render(){
+      const now = new Date(); const monthStart = new Date(now.getFullYear(), now.getMonth(),1);
+      const monthExpenses = state.expenses.filter(e=> new Date(e.date) >= monthStart);
+      const totalMonth = sum(monthExpenses);
+      refs.totalMonth.textContent = fmt(totalMonth);
+      refs.avgDaily.textContent = fmt(Math.round(totalMonth / Math.max(1, new Date().getDate())));
+      const budget = Number(state.settings.budget || 0);
+      refs.budgetLeft.textContent = fmt(Math.max(0, budget - totalMonth));
+      if(budget>0){ const pct = (totalMonth/budget)*100; if(pct>100) refs.budgetLeft.style.color='var(--danger)'; else if(pct>80) refs.budgetLeft.style.color='var(--warn)'; else refs.budgetLeft.style.color='var(--good)'; } else { refs.budgetLeft.style.color='inherit'; }
+      const daysPassed = new Date().getDate(); const avg = totalMonth / Math.max(1, daysPassed); const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1,0).getDate(); const predicted = Math.round(avg * daysInMonth);
+      refs.predicted.textContent = fmt(predicted);
+
+      const cats = Array.from(new Set(state.expenses.map(e=>e.category)));
+      document.getElementById('filter-category').innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+      const q = document.getElementById('search')?.value.trim().toLowerCase() || '';
+      let items = state.expenses.slice().sort((a,b)=>b.createdAt - a.createdAt);
+      if(q) items = items.filter(e=> e.note.toLowerCase().includes(q) || e.category.toLowerCase().includes(q) || e.mood.toLowerCase().includes(q));
+      refs.expenseList.innerHTML='';
+      for(const e of items.slice(0,200)){
+        const el = document.createElement('div'); el.className='expense-item';
+        const moodChip = e.mood && e.mood !== 'Neutral' ? `<span class="chip" style="margin-left:8px;background:var(--accent-2);font-size:10px">${e.mood}</span>` : '';
+        el.innerHTML = `<div class="expense-meta"><div class="chip">${e.category}${moodChip}</div><div><strong>${fmt(e.amount)}</strong><div class="muted">${e.date}${e.note? ' • '+e.note:''}</div></div></div><div style="display:flex;gap:8px"><button class="btn ghost" data-edit="${e.id}">Edit</button><button class="btn" data-delete="${e.id}">Delete</button></div>`;
+        refs.expenseList.appendChild(el);
+      }
+
+      // pie
+      const viewExp = state.expenses.filter(e=> new Date(e.date) >= monthStart);
+      const catMap = {}; for(const e of viewExp) catMap[e.category] = (catMap[e.category]||0) + Number(e.amount);
+      const labels = Object.keys(catMap);
+      pieChart.data.labels = labels; pieChart.data.datasets[0].data = labels.map(l=>catMap[l]); pieChart.update();
+
+      // line chart last 30 days
+      const days=30; const byDay={}; for(let i=0;i<days;i++){ const d=new Date(); d.setDate(d.getDate()- (days-1-i)); byDay[iso(d)] = 0; }
+      for(const e of state.expenses){ if(byDay.hasOwnProperty(e.date)) byDay[e.date]+=Number(e.amount); }
+      lineChart.data.labels = Object.keys(byDay); lineChart.data.datasets[0].data = Object.values(byDay); lineChart.update();
+
+      updateGreeting(avg);
+      generateInsights(monthExpenses); 
+      renderHeatmap(); 
+      renderYearly();
+      renderDependencyTree();
+    }
+    
+    function updateGreeting(dailyAvg) {
+        const now = new Date();
+        const hour = now.getHours();
+        let timeGreeting = '';
+        if (hour < 12) timeGreeting = 'morning';
+        else if (hour < 18) timeGreeting = 'afternoon';
+        else timeGreeting = 'evening';
+
+        const todaySpend = state.expenses.filter(e => e.date === iso(now)).reduce((s, e) => s + Number(e.amount), 0);
+        const avg = dailyAvg;
+        let spendMessage = '';
+
+        if (state.expenses.length < 5) {
+            spendMessage = `Start tracking your expenses to unlock personalized insights!`;
+        } else if (todaySpend < avg * 0.75) {
+            const pctLess = Math.round((1 - (todaySpend / avg)) * 100);
+            spendMessage = `You spent ${pctLess}% less today than your usual average. Keep it up! 👏`;
+        } else if (todaySpend > avg * 1.25) {
+            const pctMore = Math.round(((todaySpend / avg) - 1) * 100);
+            spendMessage = `Spending is ${pctMore}% higher than usual today. Check your impulse purchases! ⚠️`;
+        } else {
+            spendMessage = `Spending is on track today. Looking good! ✨`;
+        }
+
+        refs.greetingText.innerHTML = `Good ${timeGreeting}, ${state.settings.name}! ${spendMessage}`;
+    }
+
+    function generateInsights(thisMonth){ 
+        const now=new Date(); const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+        const lastMonthStart=new Date(now.getFullYear(),now.getMonth()-1,1); const lastMonthEnd=new Date(now.getFullYear(),now.getMonth(),0); 
+        const lastMonth=state.expenses.filter(e=> new Date(e.date) >= lastMonthStart && new Date(e.date) <= lastMonthEnd); 
+        const tSum=sum(thisMonth); const lSum=sum(lastMonth); 
+        
+        let text=''; 
+        
+        // 1. Month-over-Month Insight
+        if(lSum>0){ 
+            const diff=Math.round(((tSum-lSum)/lSum)*100); 
+            if(diff>0) text+=`You spent ${Math.abs(diff)}% more than last month. `; 
+            else if(diff<0) text+=`Good job — ${Math.abs(diff)}% less spending than last month. `; 
+        } 
+        
+        // 2. Top Category
+        const catMap={}; for(const e of thisMonth) catMap[e.category]=(catMap[e.category]||0)+Number(e.amount); 
+        const sortedCats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]); 
+        if(sortedCats.length) text+=`Top category this month: ${sortedCats[0][0]} (${fmt(sortedCats[0][1])}). `; 
+
+        // 3. Emotion-Based Insights
+        const moodMap = {};
+        for(const e of thisMonth) moodMap[e.mood] = (moodMap[e.mood] || {count: 0, sum: 0, hours: []});
+        for(const e of thisMonth) {
+            moodMap[e.mood].count++;
+            moodMap[e.mood].sum += Number(e.amount);
+            moodMap[e.mood].hours.push(getHour(e.createdAt));
+        }
+
+        if (moodMap.Stress && moodMap.Stress.count > 0 && moodMap.Stress.sum > tSum * 0.1) {
+            text += `**Psychological Insight:** Your 'Stress' spending is high, totaling ${fmt(moodMap.Stress.sum)}. Try a walk instead! `;
+        }
+        if (moodMap.Impulse && moodMap.Impulse.count > 0) {
+            const lateNightImpulses = moodMap.Impulse.hours.filter(h => h >= 22 || h < 6).length;
+            if (lateNightImpulses > moodMap.Impulse.count / 2) {
+                text += `**Impulse Alert:** Your impulse spending is highest late at night. Maybe keep your wallet away after 10 PM. 🌙`;
+            }
+        }
+        if (moodMap.Happy && moodMap.Happy.count > 0 && moodMap.Happy.sum > (moodMap.Stress?.sum || 0) * 2) {
+            text += `**Positive Trend:** You're spending more on things that make you 'Happy' compared to when 'Stressed'. That's a great habit! 😊`;
+        }
+
+        refs.insights.textContent = text || 'No insights yet — add some expenses to see smart tips.'; 
+    }
+
+    function renderHeatmap(){ const days=30; const container=refs.heatmap; container.innerHTML=''; const byDay={}; for(let i=0;i<days;i++){ const d=new Date(); d.setDate(d.getDate()- (days-1-i)); byDay[iso(d)]=0; } for(const e of state.expenses){ if(byDay.hasOwnProperty(e.date)) byDay[e.date]+=Number(e.amount); } const values=Object.values(byDay); const max=Math.max(1,...values); Object.entries(byDay).forEach(([day,val])=>{ const el=document.createElement('div'); el.className='heat-day'; const intensity=Math.round((val/max)*9); const bg=`rgba(124,58,237,${0.08 + (intensity/12)})`; el.style.background=bg; el.title=`${day} — ${fmt(val)}`; el.textContent=new Date(day).getDate(); container.appendChild(el); }); }
+
+    function renderYearly(){ const byMonth={}; const now=new Date(); for(let m=0;m<12;m++){ const key=`${now.getFullYear()}-${(m+1).toString().padStart(2,'0')}`; byMonth[key]=0; } for(const e of state.expenses){ const d=new Date(e.date); const key=`${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`; if(byMonth.hasOwnProperty(key)) byMonth[key]+=Number(e.amount); } let html=''; for(const [k,v] of Object.entries(byMonth)) html+=`<div style="display:flex;justify-content:space-between;padding:6px 0"><div>${k}</div><div>${fmt(Math.round(v))}</div></div>`; refs.yearly.innerHTML=html; }
+
+    function renderDependencyTree() {
+        const root = document.getElementById('dependency-tree');
+        const now = new Date(); const monthKey = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}`;
+        const monthExpenses = state.expenses.filter(e=> e.date.startsWith(monthKey));
+        const totalMonth = sum(monthExpenses);
+
+        if (monthExpenses.length === 0) {
+            root.innerHTML = `<div class="muted">Add expenses to see the Dependency Tree.</div>`;
+            return;
+        }
+
+        // 1. Group by Category
+        const treeData = {};
+        for(const e of monthExpenses) {
+            if (!treeData[e.category]) treeData[e.category] = [];
+            treeData[e.category].push(e);
+        }
+
+        let html = `<strong>Root: Monthly Spending (${fmt(totalMonth)})</strong>`;
+        html += `<ul>`;
+
+        // 2. Create Branches (Categories)
+        const sortedCats = Object.keys(treeData).sort((a, b) => sum(treeData[b]) - sum(treeData[a]));
+
+        for(const category of sortedCats) {
+            const catTotal = sum(treeData[category]);
+            html += `<li><strong>Branch: ${category}</strong> (${fmt(catTotal)})`;
+            html += `<ul>`;
+            // 3. Create Leaves (Expenses) - showing top 3 per category for brevity
+            const sortedExpenses = treeData[category].slice().sort((a,b)=>b.amount-a.amount);
+            for(const e of sortedExpenses.slice(0, 3)) {
+                html += `<li>Leaf: ${fmt(e.amount)} - ${e.note || 'No Note'} (${e.mood})</li>`;
+            }
+            if (sortedExpenses.length > 3) {
+                html += `<li class="muted">...and ${sortedExpenses.length - 3} more entries</li>`;
+            }
+            html += `</ul></li>`;
+        }
+        
+        html += `</ul>`;
+        root.innerHTML = html;
+    }
+
+    function showSnackableSummary() {
+        const now = new Date();
+        const monthExpenses = state.expenses.filter(e => e.date.startsWith(`${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}`));
+        
+        if (monthExpenses.length === 0) {
+            document.getElementById('quick-stats-content').innerHTML = `<div style="grid-column: 1 / -1; margin-top:10px;" class="muted">No data available yet. Please add some expenses!</div>`;
+            document.getElementById('summary-categories').textContent = '—';
+            document.getElementById('summary-backdrop').style.display='flex';
+            return;
+        }
+
+        const monthlyTotal = sum(monthExpenses);
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+        const monthlyAvg = monthlyTotal / daysInMonth;
+
+        const catMap = {}; for(const e of monthExpenses) catMap[e.category] = (catMap[e.category]||0) + Number(e.amount);
+        const topCats = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0, 3).map(c => `${c[0]} (${fmt(c[1])})`).join(', ');
+
+        const highestExpense = monthExpenses.reduce((max, e) => (Number(e.amount) > Number(max.amount) ? e : max), monthExpenses[0]);
+
+        const byDay = {};
+        for(const e of state.expenses) byDay[e.date] = (byDay[e.date] || 0) + Number(e.amount);
+        
+        const sortedDays = Object.entries(byDay).sort((a,b)=>a[1]-b[1]);
+        const cheapestDay = sortedDays[0];
+
+        const html = `
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="muted">Monthly Average</div>
+                <div class="big-stat">${fmt(Math.round(monthlyAvg))}</div>
+            </div>
+            <div class="card">
+                <div class="muted">Highest Expense</div>
+                <div class="big-num" style="color:var(--danger)">${fmt(highestExpense.amount)}</div>
+                <div class="muted" style="font-size:11px">${highestExpense.category}</div>
+            </div>
+            <div class="card">
+                <div class="muted">Cheapest Day (Spend)</div>
+                <div class="big-num" style="color:var(--good)">${fmt(cheapestDay[1])}</div>
+                <div class="muted" style="font-size:11px">${cheapestDay[0]}</div>
+            </div>
+        `;
+        document.getElementById('quick-stats-content').innerHTML = html;
+        document.getElementById('summary-categories').textContent = topCats;
+        document.getElementById('summary-backdrop').style.display='flex';
+    }
+
+
+    // PIN functions
+    async function hashPin(pin){ const enc=new TextEncoder(); const data=enc.encode(pin); const hash=await crypto.subtle.digest('SHA-256', data); const arr=Array.from(new Uint8Array(hash)); return arr.map(b=>b.toString(16).padStart(2,'0')).join(''); }
+    
+    // Function to handle unlocking
+    function unlockApp() {
+        pinBackdrop.style.display = 'none';
+        blurLock.style.display = 'none';
+        appRoot.classList.remove('blur-content');
+        document.getElementById('unlock-pin').value = '';
+    }
+    
+    // Function to handle locking when user clicks the lock button
+    function lockApp() {
+        appRoot.classList.add('blur-content');
+        if (state.settings.pinHash) {
+            pinBackdrop.style.display = 'flex';
+            blurLock.style.display = 'none';
+        } else {
+            blurLock.style.display = 'flex';
+            pinBackdrop.style.display = 'none';
+        }
+    }
+
+    // Event listeners
+    document.getElementById('save-pin').addEventListener('click', async ()=>{ const pin=document.getElementById('pin-input').value.trim(); if(!/^[0-9]{4}$/.test(pin)) return alert('Enter a 4-digit PIN'); const h=await hashPin(pin); state.settings.pinHash=h; save(state); alert('PIN saved. App will now lock on load.'); document.getElementById('pin-input').value=''; window.location.reload(); });
+
+    document.getElementById('open-add').addEventListener('click', ()=>{ document.getElementById('modal-backdrop').style.display='flex'; clearForm(); });
+    document.getElementById('close-modal').addEventListener('click', ()=>{ document.getElementById('modal-backdrop').style.display='none'; clearForm(); });
+
+    document.getElementById('open-summary-popup').addEventListener('click', showSnackableSummary);
+    document.getElementById('close-summary').addEventListener('click', ()=>{ document.getElementById('summary-backdrop').style.display='none'; });
+
+    document.getElementById('unlock-btn').addEventListener('click', async ()=>{ 
+        const pin=document.getElementById('unlock-pin').value.trim(); 
+        if(!pin) return; 
+        const h=await hashPin(pin); 
+        if(h===state.settings.pinHash){ 
+            unlockApp();
+        } else {
+            alert('Wrong PIN'); 
+            document.getElementById('unlock-pin').value = '';
+        }
+    });
+
+    document.getElementById('close-pin').addEventListener('click', ()=>{ 
+        // When user closes PIN modal, revert to locked/blurred state
+        if (state.settings.pinHash) {
+            lockApp(); 
+        } else {
+            unlockApp();
+        }
+    });
+
+    document.getElementById('lock-screen-btn').addEventListener('click', lockApp);
+    
+    blurLock.addEventListener('click', ()=>{
+      if(state.settings.pinHash) {
+        lockApp(); // Tapping "Tap to unlock" shows the PIN modal
+      } else {
+        unlockApp(); // No PIN set, so unlock immediately
+      }
+    });
+
+
+    // Quick add
+    document.getElementById('quick-add').addEventListener('click', ()=>{ 
+        const a=document.getElementById('quick-amount').value; 
+        const c=document.getElementById('quick-category').value; 
+        const m=document.getElementById('quick-mood').value;
+        const n=document.getElementById('quick-note').value; 
+        if(!a) return alert('Enter amount'); 
+        addExpense({amount:a,category:c,date:iso(new Date()),time:'',note:n, mood:m}); 
+        document.getElementById('quick-amount').value=''; 
+        document.getElementById('quick-note').value=''; 
+    });
+
+    // Edit/Delete from list
+    document.getElementById('expense-list').addEventListener('click',(e)=>{ const id=e.target.dataset.edit||e.target.dataset.delete; if(!id) return; if(e.target.dataset.edit){ const item=state.expenses.find(x=>x.id===id); if(item) openModal(item); } if(e.target.dataset.delete){ if(confirm('Delete?')) deleteExpense(id); } });
+
+    // Search/filter
+    document.getElementById('search')?.addEventListener('input', ()=>render()); document.getElementById('filter-category')?.addEventListener('change', ()=>render());
+
+    // Budget save
+    document.getElementById('save-budget').addEventListener('click', ()=>{ const v=Number(document.getElementById('budget-input').value||0); state.settings.budget=v; save(state); render(); document.getElementById('budget-input').value=''; });
+
+    // Theme toggle
+    document.getElementById('toggle-theme').addEventListener('click', ()=>{ state.settings.theme = state.settings.theme==='dark'?'light':'dark'; save(state); applyTheme(); });
+    function applyTheme(){ if(state.settings.theme==='light'){ document.body.style.background='linear-gradient(180deg,#f8fafc,#eef2ff)'; document.body.style.color='#071022'; } else { document.body.style.background='radial-gradient(1200px 400px at 10% 10%, rgba(7,18,34,0.6), transparent), linear-gradient(180deg,#071022 0%, #041021 100%)'; document.body.style.color='#e8f3fb'; } }
+
+    // Modal form helpers
+    function openModal(item){ 
+        const mb=document.getElementById('modal-backdrop'); 
+        mb.style.display='flex'; 
+        if(item){ 
+            document.getElementById('modal-title').textContent='Edit Expense'; 
+            document.getElementById('form-amount').value=item.amount; 
+            document.getElementById('form-category').value=item.category; 
+            document.getElementById('form-mood').value=item.mood || 'Neutral'; 
+            document.getElementById('form-date').value=item.date; 
+            document.getElementById('form-time').value=new Date(item.createdAt).toTimeString().slice(0,5); 
+            document.getElementById('form-note').value=item.note; 
+            document.getElementById('delete-expense').style.display='inline-block'; 
+            document.getElementById('delete-expense').dataset.id=item.id; 
+        } else { 
+            document.getElementById('modal-title').textContent='Add Expense'; 
+            document.getElementById('form-date').value=iso(new Date()); 
+            document.getElementById('form-mood').value='Neutral';
+            document.getElementById('delete-expense').style.display='none'; 
+            document.getElementById('delete-expense').dataset.id=''; 
+        } 
+    }
+    function clearForm(){ document.getElementById('form-amount').value=''; document.getElementById('form-note').value=''; }
+
+    document.getElementById('save-expense').addEventListener('click', ()=>{ 
+        const amt=document.getElementById('form-amount').value; 
+        const cat=document.getElementById('form-category').value; 
+        const mood=document.getElementById('form-mood').value;
+        const date=document.getElementById('form-date').value; 
+        const time=document.getElementById('form-time').value; 
+        const note=document.getElementById('form-note').value; 
+        if(!amt) return alert('Enter amount'); 
+        const delId=document.getElementById('delete-expense').dataset.id; 
+        if(delId){ 
+            updateExpense(delId,{amount:Number(amt),category:cat,date,note,mood,createdAt:new Date(date + (time?('T'+time):'T00:00')).getTime()}); 
+        } else addExpense({amount:amt,category:cat,date,time,note,mood}); 
+        document.getElementById('modal-backdrop').style.display='none'; 
+        clearForm(); 
+    });
+    document.getElementById('delete-expense').addEventListener('click', ()=>{ const id=document.getElementById('delete-expense').dataset.id; if(!id) return; if(confirm('Delete?')){ deleteExpense(id); document.getElementById('modal-backdrop').style.display='none'; } });
+
+    // Export PDF summary (HTML-to-print) - Preserved
+    document.getElementById('export-pdf').addEventListener('click', exportPDF);
+    function exportPDF(){
+      const now=new Date(); const monthKey = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}`;
+      const monthExpenses = state.expenses.filter(e=> e.date.startsWith(monthKey));
+      const total = sum(monthExpenses);
+      const top = monthExpenses.slice().sort((a,b)=>b.amount-a.amount).slice(0,5);
+      const catMap={}; for(const e of monthExpenses) catMap[e.category]=(catMap[e.category]||0)+Number(e.amount);
+      const mostUsed = Object.entries(catMap).sort((a,b)=>b[1]-a[1])[0];
+
+      const pieImg = pieChart ? pieChart.toBase64Image() : ''; const lineImg = lineChart ? lineChart.toBase64Image() : '';
+
+      const html = `
+      <html>
+      <head>
+        <title>Expense Summary - ${monthKey}</title>
+        <style>
+          body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111}
+          .header{display:flex;justify-content:space-between;align-items:center}
+          .cards{display:flex;gap:12px;margin-top:12px}
+          .card{padding:12px;border-radius:8px;border:1px solid #ddd;flex:1}
+          table{width:100%;border-collapse:collapse;margin-top:12px}
+          th,td{padding:8px;border:1px solid #ddd;text-align:left}
+          img{max-width:100%;height:auto}
+        </style>
+      </head>
+      <body>
+        <div class="header"><h2>Expense Summary</h2><div>${monthKey}</div></div>
+        <div class="cards">
+          <div class="card"><strong>Total this month</strong><div style="font-size:24px">${fmt(total)}</div></div>
+          <div class="card"><strong>Most used category</strong><div style="font-size:20px">${mostUsed? mostUsed[0] : '—'}</div></div>
+        </div>
+        <h3 style="margin-top:18px">Charts</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap"><div style="flex:1"><img src="${pieImg}" alt="pie"/></div><div style="flex:1"><img src="${lineImg}" alt="line"/></div></div>
+        <h3 style="margin-top:18px">Top expenses</h3>
+        <table><thead><tr><th>Title/Note</th><th>Amount</th><th>Category</th><th>Mood</th><th>Date</th></tr></thead><tbody>
+          ${top.map(t=>`<tr><td>${(t.note||'—')}</td><td>${fmt(t.amount)}</td><td>${t.category}</td><td>${t.mood || '—'}</td><td>${t.date}</td></tr>`).join('')}
+        </tbody></table>
+      </body>
+      </html>
+      `;
+
+      const w = window.open('', '_blank');
+      w.document.open(); w.document.write(html); w.document.close();
+      w.onload = ()=>{ setTimeout(()=>{ w.print(); /* w.close(); */ }, 600); };
+    }
+
+    // init
+    window.addEventListener('load', ()=>{ 
+        initCharts(); 
+        applyTheme(); 
+        render(); 
+        
+        // If no PIN is set, ensure it's unlocked on load
+        if(!state.settings.pinHash) {
+            unlockApp();
+        }
+    });
+
+  </script>
+</body>
+</html>
